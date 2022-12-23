@@ -10,10 +10,9 @@ def parse_args():
   return parser.parse_args()
 
 def main(args):
-  if args.verbose:
-    print (sys.argv[0])
-  else:
-    print('nothing to say')
+  with open(args.filename) as sv_file:
+    for line in sv_file:
+      print(line.rstrip())
   return 0
   
 if __name__ == '__main__':

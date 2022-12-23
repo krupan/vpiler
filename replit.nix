@@ -1,5 +1,7 @@
 { pkgs }: {
   deps = [
+    pkgs.file
+    pkgs.verilog
     pkgs.python38Full
   ];
   env = {
