@@ -25,6 +25,7 @@ def next_token(code, position, line):
     
   if(code[position] in (string.ascii_letters + '_' +'$')):
        token_start = position 
+       position += 1
        while(code[position] in (string.ascii_letters + string.digits + '_')):
          position += 1
        print(code[token_start: position])
