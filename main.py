@@ -46,8 +46,6 @@ def main(args):
     line = 1
     with open(args.filename) as sv_file:
         sv_code = sv_file.read()
-        print(sv_code[-1])
-        sys.exit(-1)
     while position < len(sv_code):
         position, line = next_token(sv_code, position, line)
     return 0
