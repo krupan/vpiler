@@ -10,8 +10,8 @@
 
 <source_text> ::= [ <timeunits_declaration> ] { <description> }
 <description> ::= <module_declaration>
-<module_ansi_header> ::= module <module_identifier> \;
 <module_declaration> ::= <module_ansi_header> { <non_port_module_item> } endmodule
+<module_ansi_header> ::= module <module_identifier> \;
 <non_port_module_item> ::= <module_or_generate_item>
 <module_or_generate_item> ::= <module_common_item>
 <module_common_item> ::= <initial_construct>
@@ -20,8 +20,7 @@
 <statement> ::= <statement_item>
 <statement_item> ::= <subroutine_call_statement>
 <subroutine_call_statement> ::= <subroutine_call> ;
-<subroutine_call> ::= <tf_call>
-                  | <system_tf_call>
+<subroutine_call> ::= <tf_call> | <system_tf_call>
 <system_tf_call> ::= <system_tf_identifier> [ ( <list_of_arguments> ) ]
 <system_tf_identifier> ::= $[ a-zA-Z0-9_$ ]{ [ a-zA-Z0-9_$ ] }
 <list_of_arguments> ::= [ <expression> ] { , [ <expression> ] }
