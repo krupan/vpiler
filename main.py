@@ -62,7 +62,11 @@ class Tokenizer:
 
 
 # parser functions, see systemverilog-1800-2018.bnf that is included
-# along with this code
+# along with this code to see where these methods and their names come
+# from
+#
+# TODO: I think this would all be more clear to me if the token that's
+# being looked at was passed to each function.
 class Parser:
     def __init__(self, filename):
         self.filename = filename
@@ -71,6 +75,9 @@ class Parser:
         self.tokenizer = Tokenizer(self.code)
         self.token = ''
 
+    def next_token(self):
+        self.token = self.tokenizer.next()
+
     def error(self, message):
         print(f'{self.filename}:{self.tokenizer.line}:{self.tokenizer.position}: error: {message}')
 
@@ -78,36 +85,125 @@ class Parser:
         self.source_text()
 
     def source_text(self):
-        self.token = self.tokenizer.next()
+        self.next_token()
         while self.token != '':
-            self.description():
+            self.description()
 
     def description(self):
         self.module_declaration()
 
     def module_declaration(self):
-        self.token = self.tokenizer.next()
+        self.next_token()
         self.module_ansi_header()
-        self.token = self.tokenizer.next()
+        self.next_token()
         self.non_port_module_item()
-        self.token = self.tokenizer.next()
+        self.next_token()
         if self.token != 'endmodule':
-            self.error("expected 'endmodule'")
+            self.error("expected 'endmodule' at end of module")
 
     def module_ansi_header(self):
-        self.token = self.tokenizer.next()
+        self.next_token()
         if self.token != 'module':
-            self.error("expected 'module'")
-        self.token = self.tokenizer.next()
+            self.error("expected 'module' at start of module header")
+        self.next_token()
         self.module_identifer()
-        self.token = self.tokenizer.next()
+        self.next_token()
         if self.token != ';':
-            self.error("expected ';'")
+            self.error("expected ';' after module identifier")
+        self.next_token()
+
+    def module_identifer(self):
+        self.identifier()
 
     def non_port_module_item(self):
-        # WIP TODO
-        pass
-        
+        self.module_or_generate_item()
+
+    def module_or_generate_item(self):
+        self.module_common_item()
+
+    def module_common_item(self):
+        self.next_token()
+        self.initial_construct()
+
+    def initial_construct(self):
+        if self.token != 'initial':
+            self.error("expected 'initial' at start of initial construct")
+        self.next_token()
+        self.statement_or_null()
+
+    def statement_or_null(self):
+        self.statement()
+        self.next_token()
+        if self.token != ';':
+            self.error("expected ';' at end of statement")
+        self.next_token()
+
+    def statement(self):
+        self.statement_item()
+
+    def statement_item(self):
+        self.subroutine_call_statement()
+
+    def subroutine_call_statement(self):
+        self.subroutine_call()
+        self.next_token()
+        if self.token != ';':
+            self.error("expected ';' at end of subroutine call statement")
+        print(self.token)
+        self.next_token()
+
+    def subroutine_call(self):
+        self.system_tf_call()
+
+    def system_tf_call(self):
+        self.next_token()
+        self.system_tf_identifier()
+        self.next_token()
+        if self.token == '(':
+            print(self.token)
+            self.next_token()
+            self.list_of_arguments()
+            self.next_token()
+            if self.token != ')':
+                self.error("expecting ')' at end of function/task argument list")
+            print(self.token)
+
+    def identifier(self):
+        print(self.token)
+
+    def system_tf_identifier(self):
+        # I don't know, I guess this double checks the tokenizer?
+        if self.token[0] != '$':
+            self.error("expected '$' at start of system task/function identifier")
+        # TODO: more of these for debugging
+        print(self.token)
+
+    def list_of_arguments(self):
+        self.expression()
+        self.next_token()
+        while self.token != ',':
+            print(',')
+            self.next_token()
+            self.expression()
+            self.next_token()
+    
+    def expression(self):
+        self.primary()
+
+    def primary(self):
+        self.primary_literal()
+
+    def primary_literal(self):
+        self.string_literal()
+
+    def string_literal(self):
+        if self.token != '"':
+            self.error("expected '\"' because string literals are the only literals supported right now")
+        print(self.token)
+        self.next_token()
+        while self.token != '"':
+            print(self.token)
+            self.next_token()
 
 
 def main(args):
