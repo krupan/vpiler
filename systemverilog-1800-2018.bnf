@@ -8,7 +8,7 @@
 ; — Square brackets ( [ ] ) enclose optional items.
 ; — Braces ( { } ) enclose items that can be repeated zero or more tim
 
-<source_text> ::= [ <timeunits_declaration> ] { <description> }
+<source_text> ::= { <description> }
 <description> ::= <module_declaration>
 <module_declaration> ::= <module_ansi_header> { <non_port_module_item> } endmodule
 <module_ansi_header> ::= module <module_identifier> \;

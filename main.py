@@ -72,11 +72,10 @@ class Parser:
         self.filename = filename
         with open(self.filename) as sv_file:
             self.code = sv_file.read()
-        self.tokenizer = Tokenizer(self.code)
-        self.token = ''
+        self.tokenizer = Tokenizer(self.code) 
 
     def next_token(self):
-        self.token = self.tokenizer.next()
+        return self.tokenizer.next()
 
     def error(self, message):
         print(f'{self.filename}:{self.tokenizer.line}:{self.tokenizer.position}: error: {message}')
@@ -85,40 +84,38 @@ class Parser:
         self.source_text()
 
     def source_text(self):
-        self.next_token()
-        while self.token != '':
-            self.description()
+        token = self.next_token()
+        while token != '':
+            self.description(token)
+            token = self.next_token()
 
-    def description(self):
-        self.module_declaration()
+    def description(self, token):
+        self.module_declaration(token)
 
-    def module_declaration(self):
-        self.next_token()
-        self.module_ansi_header()
-        self.next_token()
-        self.non_port_module_item()
-        self.next_token()
-        if self.token != 'endmodule':
+    def module_declaration(self, token):
+        self.module_ansi_header(token)
+        token = self.next_token()
+        self.non_port_module_item(token)
+        token = self.next_token()
+        if token != 'endmodule':
             self.error("expected 'endmodule' at end of module")
 
-    def module_ansi_header(self):
-        self.next_token()
+    def module_ansi_header(self, token):
         if self.token != 'module':
             self.error("expected 'module' at start of module header")
-        self.next_token()
-        self.module_identifer()
-        self.next_token()
+        token = self.next_token()
+        self.module_identifer(token)
+        token = self.next_token()
         if self.token != ';':
             self.error("expected ';' after module identifier")
-        self.next_token()
 
-    def module_identifer(self):
-        self.identifier()
+    def module_identifer(self, token):
+        self.identifier(token)
 
-    def non_port_module_item(self):
-        self.module_or_generate_item()
+    def non_port_module_item(self, token):
+        self.module_or_generate_item(token)
 
-    def module_or_generate_item(self):
+    def module_or_generate_item(self, token):
         self.module_common_item()
 
     def module_common_item(self):
