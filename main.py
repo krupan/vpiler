@@ -17,6 +17,7 @@ class Tokenizer:
         self.code = sv_code
         self.position = 0
         self.line = 1
+        self.position_in_line = 0
 
     def next(self):
         try:
@@ -24,35 +25,44 @@ class Tokenizer:
             if self.code[self.position] == '\n':
                 self.line += 1
                 self.position+=1
+                self.position_in_line = 0
 
             # handle whitespace
             while self.code[self.position] in string.whitespace:
                 self.position += 1
+                self.position_in_line += 1
 
             # handle punctuation
             if self.code[self.position] in ';()':
-                self.position+= 1
+                self.position += 1
+                self.position_in_line += 1
                 return self.code[self.position-1]
 
             # handle string constants
             if self.code[self.position] == '"':
                 string_start = self.position
                 self.position += 1
+                self.position_in_line += 1
                 # look for quotes to end string, but not if they are preceded by a \
                 while self.code[self.position] != '"':
                     if self.code[self.position] == '\\':
                         self.position += 2
+                        self.position_in_line += 2
                     else:
                         self.position += 1
+                        self.position_in_line += 1
                 self.position += 1
+                self.position_in_line += 1
                 return self.code[string_start:self.position]
 
             # handle identifiers
             if(self.code[self.position] in (string.ascii_letters + '_' + '$')):
                 token_start = self.position
                 self.position += 1
+                self.position_in_line += 1
                 while(self.code[self.position] in (string.ascii_letters + string.digits + '_')):
                     self.position += 1
+                    self.position_in_line += 1
                 return self.code[token_start:self.position]
         # If any of the above position += 1 take us past the end of code,
         # this will save us.  Some would argue this is an improper use of
@@ -75,10 +85,12 @@ class Parser:
         self.tokenizer = Tokenizer(self.code) 
 
     def next_token(self):
-        return self.tokenizer.next()
+        token = self.tokenizer.next()
+        print(token)
+        return token
 
     def error(self, message):
-        print(f'{self.filename}:{self.tokenizer.line}:{self.tokenizer.position}: error: {message}')
+        print(f'{self.filename}:{self.tokenizer.line}:{self.tokenizer.position_in_line}: error: {message}')
 
     def go(self):
         self.source_text()
@@ -94,19 +106,15 @@ class Parser:
 
     def module_declaration(self, token):
         self.module_ansi_header(token)
-        token = self.next_token()
-        self.non_port_module_item(token)
-        token = self.next_token()
-        if token != 'endmodule':
+        self.non_port_module_item(self.next_token())
+        if self.next_token() != 'endmodule':
             self.error("expected 'endmodule' at end of module")
 
     def module_ansi_header(self, token):
-        if self.token != 'module':
+        if token != 'module':
             self.error("expected 'module' at start of module header")
-        token = self.next_token()
-        self.module_identifer(token)
-        token = self.next_token()
-        if self.token != ';':
+        self.module_identifer(self.next_token())
+        if self.next_token() != ';':
             self.error("expected ';' after module identifier")
 
     def module_identifer(self, token):
@@ -116,91 +124,86 @@ class Parser:
         self.module_or_generate_item(token)
 
     def module_or_generate_item(self, token):
-        self.module_common_item()
+        self.module_common_item(token)
 
-    def module_common_item(self):
-        self.next_token()
-        self.initial_construct()
+    def module_common_item(self, token):
+        self.initial_construct(token)
 
-    def initial_construct(self):
-        if self.token != 'initial':
+    def initial_construct(self, token):
+        if token != 'initial':
             self.error("expected 'initial' at start of initial construct")
-        self.next_token()
-        self.statement_or_null()
+        self.statement_or_null(self.next_token())
 
-    def statement_or_null(self):
-        self.statement()
-        self.next_token()
-        if self.token != ';':
+    def statement_or_null(self, token):
+        self.statement(token)
+
+        if self.next_token() != ';':
             self.error("expected ';' at end of statement")
-        self.next_token()
 
-    def statement(self):
-        self.statement_item()
+    def statement(self, token):
+        self.statement_item(token)
 
-    def statement_item(self):
-        self.subroutine_call_statement()
+    def statement_item(self, token):
+        if token == 'begin':
+            self.seq_block(token)
+        else:
+            self.subroutine_call_statement(token)
 
-    def subroutine_call_statement(self):
-        self.subroutine_call()
-        self.next_token()
-        if self.token != ';':
+    def seq_block(self, token):
+        token = self.next_token()
+        while token != 'end':
+            self.statement_or_null(token)
+            token = self.next_token()
+
+    def subroutine_call_statement(self, token):
+        self.subroutine_call(token)
+        if self.next_token() != ';':
             self.error("expected ';' at end of subroutine call statement")
-        print(self.token)
-        self.next_token()
 
-    def subroutine_call(self):
-        self.system_tf_call()
+    def subroutine_call(self, token):
+        self.system_tf_call(token)
 
-    def system_tf_call(self):
-        self.next_token()
-        self.system_tf_identifier()
-        self.next_token()
-        if self.token == '(':
-            print(self.token)
-            self.next_token()
-            self.list_of_arguments()
-            self.next_token()
-            if self.token != ')':
+    def system_tf_call(self, token):
+        self.system_tf_identifier(token)
+        if self.next_token() == '(':
+            self.list_of_arguments(self.next_token())
+            if self.next_token() != ')':
                 self.error("expecting ')' at end of function/task argument list")
-            print(self.token)
 
-    def identifier(self):
-        print(self.token)
+    def identifier(self, token):
+        if token[0] == '\\':
+            self.escaped_identifier(token)
+        else:
+            self.simple_identifier(token)
 
-    def system_tf_identifier(self):
+    def simple_identifier(self, token):
+        pass
+
+    def escaped_identifier(self, token):
+        pass
+
+    def system_tf_identifier(self, token):
         # I don't know, I guess this double checks the tokenizer?
-        if self.token[0] != '$':
+        if token[0] != '$':
             self.error("expected '$' at start of system task/function identifier")
-        # TODO: more of these for debugging
-        print(self.token)
 
-    def list_of_arguments(self):
-        self.expression()
-        self.next_token()
-        while self.token != ',':
-            print(',')
-            self.next_token()
-            self.expression()
-            self.next_token()
+    def list_of_arguments(self, token):
+        self.expression(token)
+        while self.next_token() != ',':
+            self.expression(self.next_token())
     
-    def expression(self):
-        self.primary()
+    def expression(self, token):
+        self.primary(token)
 
-    def primary(self):
-        self.primary_literal()
+    def primary(self, token):
+        self.primary_literal(token)
 
-    def primary_literal(self):
-        self.string_literal()
+    def primary_literal(self, token):
+        self.string_literal(token)
 
-    def string_literal(self):
-        if self.token != '"':
-            self.error("expected '\"' because string literals are the only literals supported right now")
-        print(self.token)
-        self.next_token()
-        while self.token != '"':
-            print(self.token)
-            self.next_token()
+    def string_literal(self, token):
+        if token[0] != '"':
+            self.error("expected string literal because string literals are the only literals supported right now")
 
 
 def main(args):

@@ -19,7 +19,8 @@
 <initial_construct> ::= initial <statement_or_null>
 <statement_or_null> ::= <statement> ;
 <statement> ::= <statement_item>
-<statement_item> ::= <subroutine_call_statement>
+<statement_item> ::= <subroutine_call_statement> | <seq_block>
+<seq_block> ::= begin { <statement_or_null> } end
 <subroutine_call_statement> ::= <subroutine_call> ;
 <subroutine_call> ::= <system_tf_call>
 <system_tf_call> ::= <system_tf_identifier> [ ( <list_of_arguments> ) ]
