@@ -121,15 +121,18 @@ class Parser:
         while token != '':
             self.description(token)
             token = self.next_token()
+        print('parsed source_text')
 
     def description(self, token):
         self.module_declaration(token)
+        print('parsed description')
 
     def module_declaration(self, token):
         self.module_ansi_header(token)
         self.non_port_module_item(self.next_token())
         if self.next_token() != 'endmodule':
             self.error("expected 'endmodule' at end of module")
+        print('parsed module_declaration')
 
     def module_ansi_header(self, token):
         if token != 'module':
@@ -137,49 +140,62 @@ class Parser:
         self.module_identifer(self.next_token())
         if self.next_token() != ';':
             self.error("expected ';' after module identifier")
+        print('parsed module_ansi_header')
 
     def module_identifer(self, token):
         self.identifier(token)
+        print('parsed module_identifer')
+
 
     def non_port_module_item(self, token):
         self.module_or_generate_item(token)
+        print('parsed non_port_module_item')
 
     def module_or_generate_item(self, token):
         self.module_common_item(token)
+        print('parsed module_or_generate_item')
 
     def module_common_item(self, token):
         self.initial_construct(token)
+        print('parsed module_common_item')
 
     def initial_construct(self, token):
         if token != 'initial':
             self.error("expected 'initial' at start of initial construct")
         self.statement_or_null(self.next_token())
+        print('parsed initial_construct')
 
     def statement_or_null(self, token):
         self.statement(token)
+        print('parsed statement_or_null')
 
     def statement(self, token):
         self.statement_item(token)
+        print('parsed statement')
 
     def statement_item(self, token):
         if token == 'begin':
             self.seq_block(token)
         else:
             self.subroutine_call_statement(token)
+        print('parsed statement_item')
 
     def seq_block(self, token):
         token = self.next_token()
         while token != 'end':
             self.statement_or_null(token)
             token = self.next_token()
+        print('parsed seq_block')
 
     def subroutine_call_statement(self, token):
         self.subroutine_call(token)
         if self.next_token() != ';':
             self.error("expected ';' at end of subroutine call statement")
+        print('parsed subroutine_call_statement')
 
     def subroutine_call(self, token):
         self.system_tf_call(token)
+        print('parsed subroutine_call')
 
     def system_tf_call(self, token):
         self.system_tf_identifier(token)
@@ -187,41 +203,49 @@ class Parser:
             self.list_of_arguments(self.next_token())
             if self.current_token() != ')':
                 self.error("expecting ')' at end of function/task argument list")
+        print('parsed subroutine_tf_call')
 
     def identifier(self, token):
         if token[0] == '\\':
             self.escaped_identifier(token)
         else:
             self.simple_identifier(token)
+        print('parsed identifier')
 
     def simple_identifier(self, token):
-        pass
+        print('parsed simple_identifier')
 
     def escaped_identifier(self, token):
-        pass
+        print('parsed escaped_identifier')
 
     def system_tf_identifier(self, token):
         # I don't know, I guess this double checks the tokenizer?
         if token[0] != '$':
             self.error("expected '$' at start of system task/function identifier")
+        print('parsed system_tf_identifier')
 
     def list_of_arguments(self, token):
         self.expression(token)
         while self.next_token() == ',':
             self.expression(self.next_token())
+        print('parsed list_of_arguments')
     
     def expression(self, token):
         self.primary(token)
+        print('parsed expression')
 
     def primary(self, token):
         self.primary_literal(token)
+        print('parsed primary')
 
     def primary_literal(self, token):
         self.string_literal(token)
+        print('parsed primary_literal')
 
     def string_literal(self, token):
         if token[0] != '"':
             self.error("expected string literal because string literals are the only literals supported right now")
+        print('parsed string_literal')
 
 
 def main(args):
