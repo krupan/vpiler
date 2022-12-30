@@ -6,7 +6,7 @@
 
 ; - A vertical bar ( | ) separates alternatives.
 ; — Square brackets ( [ ] ) enclose optional items.
-; — Braces ( { } ) enclose items that can be repeated zero or more tim
+; — Braces ( { } ) enclose items that can be repeated zero or more times
 
 <source_text> ::= { <description> }
 <description> ::= <module_declaration>
@@ -17,7 +17,9 @@
 <module_or_generate_item> ::= <module_common_item>
 <module_common_item> ::= <initial_construct>
 <initial_construct> ::= initial <statement_or_null>
-<statement_or_null> ::= <statement> ;
+; differing from the standard here, because I think it's wrong.  Not
+; going to look for a semicolon here, but in statement_item
+<statement_or_null> ::= <statement>
 <statement> ::= <statement_item>
 <statement_item> ::= <subroutine_call_statement> | <seq_block>
 <seq_block> ::= begin { <statement_or_null> } end

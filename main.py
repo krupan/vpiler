@@ -13,11 +13,17 @@ def parse_args():
 
 
 class Tokenizer:
+    ## interesting errors to consider:
+    ##
+    ## identifier starts with a number
+    ## stray semi-colons
+    ## 
     def __init__(self, sv_code):
         self.code = sv_code
         self.position = 0
         self.line = 1
         self.position_in_line = 0
+        self.current_token = ''
 
     def next(self):
         try:
@@ -36,7 +42,8 @@ class Tokenizer:
             if self.code[self.position] in ';()':
                 self.position += 1
                 self.position_in_line += 1
-                return self.code[self.position-1]
+                self.current_token = self.code[self.position-1]
+                return self.current_token
 
             # handle string constants
             if self.code[self.position] == '"':
@@ -53,7 +60,8 @@ class Tokenizer:
                         self.position_in_line += 1
                 self.position += 1
                 self.position_in_line += 1
-                return self.code[string_start:self.position]
+                self.current_token = self.code[string_start:self.position]
+                return self.current_token
 
             # handle identifiers
             if(self.code[self.position] in (string.ascii_letters + '_' + '$')):
@@ -63,12 +71,14 @@ class Tokenizer:
                 while(self.code[self.position] in (string.ascii_letters + string.digits + '_')):
                     self.position += 1
                     self.position_in_line += 1
-                return self.code[token_start:self.position]
+                self.current_token = self.code[token_start:self.position]
+                return self.current_token
         # If any of the above position += 1 take us past the end of code,
         # this will save us.  Some would argue this is an improper use of
         # exceptions.
         except IndexError as err:
-            return ''
+            self.current_token = ''
+            return self.current_token
 
 
 # parser functions, see systemverilog-1800-2018.bnf that is included
@@ -86,11 +96,22 @@ class Parser:
 
     def next_token(self):
         token = self.tokenizer.next()
-        print(token)
+        print(f'>{token}<')
         return token
+
+    def current_token(self):
+        return self.tokenizer.current_token
 
     def error(self, message):
         print(f'{self.filename}:{self.tokenizer.line}:{self.tokenizer.position_in_line}: error: {message}')
+        # uncomment when you need to debug (TODO: make --debug-parser
+        # a command-line argument)
+        #
+        # raise
+        
+        # I'm seeing how it would be useful sometimes to keep looking
+        # for errors, and sometimes not.  Not sure how to decide that
+        # in this code.
 
     def go(self):
         self.source_text()
@@ -137,9 +158,6 @@ class Parser:
     def statement_or_null(self, token):
         self.statement(token)
 
-        if self.next_token() != ';':
-            self.error("expected ';' at end of statement")
-
     def statement(self, token):
         self.statement_item(token)
 
@@ -167,7 +185,7 @@ class Parser:
         self.system_tf_identifier(token)
         if self.next_token() == '(':
             self.list_of_arguments(self.next_token())
-            if self.next_token() != ')':
+            if self.current_token() != ')':
                 self.error("expecting ')' at end of function/task argument list")
 
     def identifier(self, token):
@@ -189,7 +207,7 @@ class Parser:
 
     def list_of_arguments(self, token):
         self.expression(token)
-        while self.next_token() != ',':
+        while self.next_token() == ',':
             self.expression(self.next_token())
     
     def expression(self, token):
