@@ -84,9 +84,6 @@ class Tokenizer:
 # parser functions, see systemverilog-1800-2018.bnf that is included
 # along with this code to see where these methods and their names come
 # from
-#
-# TODO: I think this would all be more clear to me if the token that's
-# being looked at was passed to each function.
 class Parser:
     def __init__(self, filename):
         self.filename = filename
