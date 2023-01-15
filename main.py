@@ -17,7 +17,7 @@ class Tokenizer:
     ##
     ## identifier starts with a number
     ## stray semi-colons
-    ## 
+    ##
     def __init__(self, sv_code):
         self.code = sv_code
         self.position = 0
@@ -89,7 +89,7 @@ class Parser:
         self.filename = filename
         with open(self.filename) as sv_file:
             self.code = sv_file.read()
-        self.tokenizer = Tokenizer(self.code) 
+        self.tokenizer = Tokenizer(self.code)
 
     def next_token(self):
         token = self.tokenizer.next()
@@ -105,7 +105,7 @@ class Parser:
         # a command-line argument)
         #
         # raise
-        
+
         # I'm seeing how it would be useful sometimes to keep looking
         # for errors, and sometimes not.  Not sure how to decide that
         # in this code.
@@ -129,14 +129,17 @@ class Parser:
         self.non_port_module_item(self.next_token())
         if self.next_token() != 'endmodule':
             self.error("expected 'endmodule' at end of module")
+            return
         print('parsed module_declaration')
 
     def module_ansi_header(self, token):
         if token != 'module':
             self.error("expected 'module' at start of module header")
+            return
         self.module_identifer(self.next_token())
         if self.next_token() != ';':
             self.error("expected ';' after module identifier")
+            return
         print('parsed module_ansi_header')
 
     def module_identifer(self, token):
@@ -159,6 +162,7 @@ class Parser:
     def initial_construct(self, token):
         if token != 'initial':
             self.error("expected 'initial' at start of initial construct")
+            return
         self.statement_or_null(self.next_token())
         print('parsed initial_construct')
 
@@ -179,15 +183,19 @@ class Parser:
 
     def seq_block(self, token):
         token = self.next_token()
-        while token != 'end':
+        while token != 'end' and token:
             self.statement_or_null(token)
             token = self.next_token()
+        if token != 'end':
+            self.error("expected 'end' at end of sequential block")
+            return
         print('parsed seq_block')
 
     def subroutine_call_statement(self, token):
         self.subroutine_call(token)
         if self.next_token() != ';':
             self.error("expected ';' at end of subroutine call statement")
+            return
         print('parsed subroutine_call_statement')
 
     def subroutine_call(self, token):
@@ -200,6 +208,7 @@ class Parser:
             self.list_of_arguments(self.next_token())
             if self.current_token() != ')':
                 self.error("expecting ')' at end of function/task argument list")
+                return
         print('parsed subroutine_tf_call')
 
     def identifier(self, token):
@@ -219,6 +228,7 @@ class Parser:
         # I don't know, I guess this double checks the tokenizer?
         if token[0] != '$':
             self.error("expected '$' at start of system task/function identifier")
+            return
         print('parsed system_tf_identifier')
 
     def list_of_arguments(self, token):
@@ -226,7 +236,7 @@ class Parser:
         while self.next_token() == ',':
             self.expression(self.next_token())
         print('parsed list_of_arguments')
-    
+
     def expression(self, token):
         self.primary(token)
         print('parsed expression')
@@ -242,6 +252,7 @@ class Parser:
     def string_literal(self, token):
         if token[0] != '"':
             self.error("expected string literal because string literals are the only literals supported right now")
+            return
         print('parsed string_literal')
 
 
