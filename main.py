@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+import subprocess
 import argparse
 import pathlib
 import string
 import sys
+import os
 
 
 def parse_args():
@@ -81,6 +83,43 @@ class Tokenizer:
             return self.current_token
 
 
+class CodeGen:
+    def __init__(self, filename):
+        self.header = ''
+        self.body = ''
+        self.il = 0
+        self.filename = filename
+
+    def writeh(self, text):
+        self.header += text
+
+    def writeb(self, text):
+        self.body += text
+
+    def writebi(self, text):
+        self.body += ' ' * self.il
+        self.writeb(text)
+
+    def finish(self):
+        with open(self.filename, 'w') as fh:
+            fh.write(self.header)
+            fh.write('\n')
+            fh.write(self.body)
+        proc = subprocess.run(
+            ['gcc', self.filename],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        if proc.returncode:
+            print("internal error with code generation")
+            print('stdout:')
+            print(proc.stdout)
+            print('stderr')
+            print(proc.stderr)
+            print(f'generated code in {self.filename}')
+            return 1
+        os.unlink(self.filename)
+        return 0
+
 # parser functions, see systemverilog-1800-2018.bnf that is included
 # along with this code to see where these methods and their names come
 # from
@@ -90,6 +129,7 @@ class Parser:
         with open(self.filename) as sv_file:
             self.code = sv_file.read()
         self.tokenizer = Tokenizer(self.code)
+        self.cg = CodeGen(f'{filename}.c')
 
     def next_token(self):
         token = self.tokenizer.next()
@@ -112,6 +152,7 @@ class Parser:
 
     def go(self):
         self.source_text()
+        return self.cg.finish()
 
     def source_text(self):
         token = self.next_token()
@@ -163,6 +204,7 @@ class Parser:
         if token != 'initial':
             self.error("expected 'initial' at start of initial construct")
             return
+        self.cg.writeb("int main() ")
         self.statement_or_null(self.next_token())
         print('parsed initial_construct')
 
@@ -176,6 +218,8 @@ class Parser:
 
     def statement_item(self, token):
         if token == 'begin':
+            self.cg.writeb("{\n")
+            self.cg.il += 4
             self.seq_block(token)
         else:
             self.subroutine_call_statement(token)
@@ -189,6 +233,8 @@ class Parser:
         if token != 'end':
             self.error("expected 'end' at end of sequential block")
             return
+        self.cg.il -= 4
+        self.cg.writebi("}\n")
         print('parsed seq_block')
 
     def subroutine_call_statement(self, token):
@@ -205,10 +251,12 @@ class Parser:
     def system_tf_call(self, token):
         self.system_tf_identifier(token)
         if self.next_token() == '(':
+            self.cg.writeb("(")
             self.list_of_arguments(self.next_token())
             if self.current_token() != ')':
                 self.error("expecting ')' at end of function/task argument list")
                 return
+            self.cg.writeb(");\n")
         print('parsed subroutine_tf_call')
 
     def identifier(self, token):
@@ -229,11 +277,15 @@ class Parser:
         if token[0] != '$':
             self.error("expected '$' at start of system task/function identifier")
             return
+        if token == "$display":
+            # tell codegen class which include we need for this
+            self.cg.writebi("printf")
+            self.cg.writeh('#include "stdio.h"\n')
         print('parsed system_tf_identifier')
-
     def list_of_arguments(self, token):
         self.expression(token)
         while self.next_token() == ',':
+            self.cg.writeb(",")
             self.expression(self.next_token())
         print('parsed list_of_arguments')
 
@@ -253,6 +305,7 @@ class Parser:
         if token[0] != '"':
             self.error("expected string literal because string literals are the only literals supported right now")
             return
+        self.cg.writeb(token)
         print('parsed string_literal')
 
 
@@ -264,8 +317,7 @@ def main(args):
                 'initial',]
     built_in = ['$display']
     parser = Parser(args.filename)
-    parser.go()
-    return 0
+    return parser.go()
 
 
 if __name__ == '__main__':
