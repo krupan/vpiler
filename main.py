@@ -281,6 +281,7 @@ class Parser:
             # tell codegen class which include we need for this
             self.cg.writebi("printf")
             self.cg.writeh('#include "stdio.h"\n')
+            self.str_needs_newline = True
         print('parsed system_tf_identifier')
     def list_of_arguments(self, token):
         self.expression(token)
@@ -305,6 +306,10 @@ class Parser:
         if token[0] != '"':
             self.error("expected string literal because string literals are the only literals supported right now")
             return
+        if self.str_needs_newline:
+            token = token[:-1]
+            token += '\\n"'
+            self.str_needs_newline = False
         self.cg.writeb(token)
         print('parsed string_literal')
 
