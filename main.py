@@ -130,6 +130,7 @@ class Parser:
             self.code = sv_file.read()
         self.tokenizer = Tokenizer(self.code)
         self.cg = CodeGen(f'{filename}.c')
+        self.error_count =0
 
     def next_token(self):
         token = self.tokenizer.next()
@@ -149,6 +150,10 @@ class Parser:
         # I'm seeing how it would be useful sometimes to keep looking
         # for errors, and sometimes not.  Not sure how to decide that
         # in this code.
+        self.error_count += 1
+        if self.error_count > 3:
+            print("that's enough errors, giving up")
+            sys.exit(1)
 
     def go(self):
         self.source_text()
