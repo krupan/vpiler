@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import logging
 import os
 import pathlib
 import string
@@ -114,12 +115,12 @@ class CodeGen:
             stderr=subprocess.PIPE,
         )
         if proc.returncode:
-            print("internal error with code generation")
-            print('stdout:')
-            print(proc.stdout)
-            print('stderr')
-            print(proc.stderr)
-            print(f'generated code in {self.filename}')
+            logging.error("internal error with code generation")
+            logging.error('stdout:')
+            logging.error(proc.stdout)
+            logging.error('stderr')
+            logging.error(proc.stderr)
+            logging.error(f'generated code in {self.filename}')
             return 1
         os.unlink(self.filename)
         return 0
@@ -139,7 +140,7 @@ class Parser:
 
     def next_token(self):
         token = self.tokenizer.next()
-        print(f'>{token}<')
+        logging.debug(f'>{token}<')
         return token
 
     def current_token(self):
@@ -172,11 +173,11 @@ class Parser:
         while token != '':
             self.description(token)
             token = self.next_token()
-        print('parsed source_text')
+        logging.debug('parsed source_text')
 
     def description(self, token):
         self.module_declaration(token)
-        print('parsed description')
+        logging.debug('parsed description')
 
     def module_declaration(self, token):
         self.module_ansi_header(token)
@@ -184,7 +185,7 @@ class Parser:
         if self.next_token() != 'endmodule':
             self.error("expected 'endmodule' at end of module")
             return
-        print('parsed module_declaration')
+        logging.debug('parsed module_declaration')
 
     def module_ansi_header(self, token):
         if token != 'module':
@@ -194,23 +195,23 @@ class Parser:
         if self.next_token() != ';':
             self.error("expected ';' after module identifier")
             return
-        print('parsed module_ansi_header')
+        logging.debug('parsed module_ansi_header')
 
     def module_identifer(self, token):
         self.identifier(token)
-        print('parsed module_identifer')
+        logging.debug('parsed module_identifer')
 
     def non_port_module_item(self, token):
         self.module_or_generate_item(token)
-        print('parsed non_port_module_item')
+        logging.debug('parsed non_port_module_item')
 
     def module_or_generate_item(self, token):
         self.module_common_item(token)
-        print('parsed module_or_generate_item')
+        logging.debug('parsed module_or_generate_item')
 
     def module_common_item(self, token):
         self.initial_construct(token)
-        print('parsed module_common_item')
+        logging.debug('parsed module_common_item')
 
     def initial_construct(self, token):
         if token != 'initial':
@@ -218,15 +219,15 @@ class Parser:
             return
         self.cg.writeb("int main() ")
         self.statement_or_null(self.next_token())
-        print('parsed initial_construct')
+        logging.debug('parsed initial_construct')
 
     def statement_or_null(self, token):
         self.statement(token)
-        print('parsed statement_or_null')
+        logging.debug('parsed statement_or_null')
 
     def statement(self, token):
         self.statement_item(token)
-        print('parsed statement')
+        logging.debug('parsed statement')
 
     def statement_item(self, token):
         if token == 'begin':
@@ -235,7 +236,7 @@ class Parser:
             self.seq_block(token)
         else:
             self.subroutine_call_statement(token)
-        print('parsed statement_item')
+        logging.debug('parsed statement_item')
 
     def seq_block(self, token):
         token = self.next_token()
@@ -247,18 +248,18 @@ class Parser:
             return
         self.cg.il -= 4
         self.cg.writebi("}\n")
-        print('parsed seq_block')
+        logging.debug('parsed seq_block')
 
     def subroutine_call_statement(self, token):
         self.subroutine_call(token)
         if self.next_token() != ';':
             self.error("expected ';' at end of subroutine call statement")
             return
-        print('parsed subroutine_call_statement')
+        logging.debug('parsed subroutine_call_statement')
 
     def subroutine_call(self, token):
         self.system_tf_call(token)
-        print('parsed subroutine_call')
+        logging.debug('parsed subroutine_call')
 
     def system_tf_call(self, token):
         self.system_tf_identifier(token)
@@ -271,20 +272,20 @@ class Parser:
                 )
                 return
             self.cg.writeb(");\n")
-        print('parsed subroutine_tf_call')
+        logging.debug('parsed subroutine_tf_call')
 
     def identifier(self, token):
         if token[0] == '\\':
             self.escaped_identifier(token)
         else:
             self.simple_identifier(token)
-        print('parsed identifier')
+        logging.debug('parsed identifier')
 
     def simple_identifier(self, token):
-        print('parsed simple_identifier')
+        logging.debug('parsed simple_identifier')
 
     def escaped_identifier(self, token):
-        print('parsed escaped_identifier')
+        logging.debug('parsed escaped_identifier')
 
     def system_tf_identifier(self, token):
         # I don't know, I guess this double checks the tokenizer?
@@ -298,26 +299,26 @@ class Parser:
             self.cg.writebi("printf")
             self.cg.writeh('#include "stdio.h"\n')
             self.str_needs_newline = True
-        print('parsed system_tf_identifier')
+        logging.debug('parsed system_tf_identifier')
 
     def list_of_arguments(self, token):
         self.expression(token)
         while self.next_token() == ',':
             self.cg.writeb(",")
             self.expression(self.next_token())
-        print('parsed list_of_arguments')
+        logging.debug('parsed list_of_arguments')
 
     def expression(self, token):
         self.primary(token)
-        print('parsed expression')
+        logging.debug('parsed expression')
 
     def primary(self, token):
         self.primary_literal(token)
-        print('parsed primary')
+        logging.debug('parsed primary')
 
     def primary_literal(self, token):
         self.string_literal(token)
-        print('parsed primary_literal')
+        logging.debug('parsed primary_literal')
 
     def string_literal(self, token):
         if token[0] != '"':
@@ -331,10 +332,15 @@ class Parser:
             token += '\\n"'
             self.str_needs_newline = False
         self.cg.writeb(token)
-        print('parsed string_literal')
+        logging.debug('parsed string_literal')
 
 
 def main(args):
+    log_level = logging.INFO
+    if args.verbose:
+        log_level = logging.DEBUG
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=log_level)
+
     keywords = [
         'begin',
         'end',
