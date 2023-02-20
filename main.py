@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-import subprocess
 import argparse
+import os
 import pathlib
 import string
+import subprocess
 import sys
-import os
 
 
 def parse_args():
