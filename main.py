@@ -52,7 +52,8 @@ class Tokenizer:
                 string_start = self.position
                 self.position += 1
                 self.position_in_line += 1
-                # look for quotes to end string, but not if they are preceded by a \
+                # look for quotes to end string, but not if they are
+                # preceded by a \
                 while self.code[self.position] != '"':
                     if self.code[self.position] == '\\':
                         self.position += 2
@@ -146,7 +147,8 @@ class Parser:
 
     def error(self, message):
         print(
-            f'{self.filename}:{self.tokenizer.line}:{self.tokenizer.position_in_line}: error: {message}'
+            f'{self.filename}:{self.tokenizer.line}:'
+            f'{self.tokenizer.position_in_line}: error: {message}'
         )
         # uncomment when you need to debug (TODO: make --debug-parser
         # a command-line argument)
@@ -320,7 +322,8 @@ class Parser:
     def string_literal(self, token):
         if token[0] != '"':
             self.error(
-                "expected string literal because string literals are the only literals supported right now"
+                "expected string literal because string literals are the only "
+                "literals supported right now"
             )
             return
         if self.str_needs_newline:
