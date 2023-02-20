@@ -32,7 +32,7 @@ class Tokenizer:
             # handle newline
             if self.code[self.position] == '\n':
                 self.line += 1
-                self.position+=1
+                self.position += 1
                 self.position_in_line = 0
 
             # handle whitespace
@@ -44,7 +44,7 @@ class Tokenizer:
             if self.code[self.position] in ';()':
                 self.position += 1
                 self.position_in_line += 1
-                self.current_token = self.code[self.position-1]
+                self.current_token = self.code[self.position - 1]
                 return self.current_token
 
             # handle string constants
@@ -62,18 +62,20 @@ class Tokenizer:
                         self.position_in_line += 1
                 self.position += 1
                 self.position_in_line += 1
-                self.current_token = self.code[string_start:self.position]
+                self.current_token = self.code[string_start : self.position]
                 return self.current_token
 
             # handle identifiers
-            if(self.code[self.position] in (string.ascii_letters + '_' + '$')):
+            if self.code[self.position] in (string.ascii_letters + '_' + '$'):
                 token_start = self.position
                 self.position += 1
                 self.position_in_line += 1
-                while(self.code[self.position] in (string.ascii_letters + string.digits + '_')):
+                while self.code[self.position] in (
+                    string.ascii_letters + string.digits + '_'
+                ):
                     self.position += 1
                     self.position_in_line += 1
-                self.current_token = self.code[token_start:self.position]
+                self.current_token = self.code[token_start : self.position]
                 return self.current_token
         # If any of the above position += 1 take us past the end of code,
         # this will save us.  Some would argue this is an improper use of
@@ -108,7 +110,8 @@ class CodeGen:
         proc = subprocess.run(
             ['gcc', self.filename],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE,
+        )
         if proc.returncode:
             print("internal error with code generation")
             print('stdout:')
@@ -120,6 +123,7 @@ class CodeGen:
         os.unlink(self.filename)
         return 0
 
+
 # parser functions, see systemverilog-1800-2018.bnf that is included
 # along with this code to see where these methods and their names come
 # from
@@ -130,7 +134,7 @@ class Parser:
             self.code = sv_file.read()
         self.tokenizer = Tokenizer(self.code)
         self.cg = CodeGen(f'{filename}.c')
-        self.error_count =0
+        self.error_count = 0
 
     def next_token(self):
         token = self.tokenizer.next()
@@ -141,7 +145,9 @@ class Parser:
         return self.tokenizer.current_token
 
     def error(self, message):
-        print(f'{self.filename}:{self.tokenizer.line}:{self.tokenizer.position_in_line}: error: {message}')
+        print(
+            f'{self.filename}:{self.tokenizer.line}:{self.tokenizer.position_in_line}: error: {message}'
+        )
         # uncomment when you need to debug (TODO: make --debug-parser
         # a command-line argument)
         #
@@ -191,7 +197,6 @@ class Parser:
     def module_identifer(self, token):
         self.identifier(token)
         print('parsed module_identifer')
-
 
     def non_port_module_item(self, token):
         self.module_or_generate_item(token)
@@ -259,7 +264,9 @@ class Parser:
             self.cg.writeb("(")
             self.list_of_arguments(self.next_token())
             if self.current_token() != ')':
-                self.error("expecting ')' at end of function/task argument list")
+                self.error(
+                    "expecting ')' at end of function/task argument list"
+                )
                 return
             self.cg.writeb(");\n")
         print('parsed subroutine_tf_call')
@@ -280,7 +287,9 @@ class Parser:
     def system_tf_identifier(self, token):
         # I don't know, I guess this double checks the tokenizer?
         if token[0] != '$':
-            self.error("expected '$' at start of system task/function identifier")
+            self.error(
+                "expected '$' at start of system task/function identifier"
+            )
             return
         if token == "$display":
             # tell codegen class which include we need for this
@@ -288,6 +297,7 @@ class Parser:
             self.cg.writeh('#include "stdio.h"\n')
             self.str_needs_newline = True
         print('parsed system_tf_identifier')
+
     def list_of_arguments(self, token):
         self.expression(token)
         while self.next_token() == ',':
@@ -309,7 +319,9 @@ class Parser:
 
     def string_literal(self, token):
         if token[0] != '"':
-            self.error("expected string literal because string literals are the only literals supported right now")
+            self.error(
+                "expected string literal because string literals are the only literals supported right now"
+            )
             return
         if self.str_needs_newline:
             token = token[:-1]
@@ -320,11 +332,13 @@ class Parser:
 
 
 def main(args):
-    keywords = ['begin',
-                'end',
-                'module',
-                'endmodule',
-                'initial',]
+    keywords = [
+        'begin',
+        'end',
+        'module',
+        'endmodule',
+        'initial',
+    ]
     built_in = ['$display']
     parser = Parser(args.filename)
     return parser.go()
