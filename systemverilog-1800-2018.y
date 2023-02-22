@@ -1,0 +1,37 @@
+/* Not complete, obviously, but what is implemented or will soon be
+; implemented.  Also, obviously, much more complicated than it could
+; be because I've left in things that will need to be more complicated
+; at some point.  For example, all of the <thing> ::= <another_thing>
+; lines that you see.
+
+; - A vertical bar ( | ) separates alternatives.
+; — Square brackets ( [ ] ) enclose optional items.
+; — Braces ( { } ) enclose items that can be repeated zero or more times */
+
+source_text: description | source_text description;
+description: module_declaration;
+module_declaration: module_ansi_header { <non_port_module_item> } endmodule
+<module_ansi_header> ::= module <module_identifier> \;
+<module_identifier> ::= <identifier>
+<non_port_module_item> ::= <module_or_generate_item>
+<module_or_generate_item> ::= <module_common_item>
+<module_common_item> ::= <initial_construct>
+<initial_construct> ::= initial <statement_or_null>
+; differing from the standard here, because I think it's wrong.  Not
+; going to look for a semicolon here, but in statement_item
+<statement_or_null> ::= <statement>
+<statement> ::= <statement_item>
+<statement_item> ::= <subroutine_call_statement> | <seq_block>
+<seq_block> ::= begin { <statement_or_null> } end
+<subroutine_call_statement> ::= <subroutine_call> ;
+<subroutine_call> ::= <system_tf_call>
+<system_tf_call> ::= <system_tf_identifier> [ ( <list_of_arguments> ) ]
+<identifier> ::= <simple_identifier> | <escaped_identifier>
+<escaped_identifier> ::= \ {any_printable_ASCII_character_except_white_space} white_space
+<simple_identifier> ::= [ a-zA-Z_ ] { [ a-zA-Z0-9_$ ] }
+<system_tf_identifier> ::= $[ a-zA-Z0-9_$ ]{ [ a-zA-Z0-9_$ ] }
+<list_of_arguments> ::= [ <expression> ] { , [ <expression> ] }
+<expression> ::= <primary>
+<primary> ::= <primary_literal>
+<primary_literal> ::= <string_literal>
+<string_literal> ::= " { Any_ASCII_Characters } "
