@@ -1,2 +1,20 @@
 #!/bin/bash
+
+echo "compiling and running with icarus verilog"
+iverilog -o example example.sv
+./example
+
+echo
+echo "compiling and running with vpiler"
 ./main.py example.sv
+./a.out
+
+echo 
+echo "compiling and running with ghdl"
+ghdl -a example.vhdl
+ghdl -e example
+ghdl -r example
+
+echo
+echo "compiling and running with vpiler"
+echo "not done yet"
