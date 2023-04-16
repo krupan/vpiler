@@ -29,62 +29,89 @@ class Tokenizer:
         self.current_token = ''
 
     def next(self):
-        try:
-            # handle newline
-            if self.code[self.position] == '\n':
-                self.line += 1
-                self.position += 1
-                self.position_in_line = 0
+        while True:
+            try:
+                logging.debug(f'looking at {self.code[self.position]}')
 
-            # handle whitespace
-            while self.code[self.position] in string.whitespace:
-                self.position += 1
-                self.position_in_line += 1
+                # handle newline
+                if self.code[self.position] == '\n':
+                    self.line += 1
+                    self.position += 1
+                    self.position_in_line = 0
 
-            # handle punctuation
-            if self.code[self.position] in ';()':
-                self.position += 1
-                self.position_in_line += 1
-                self.current_token = self.code[self.position - 1]
-                return self.current_token
-
-            # handle string constants
-            if self.code[self.position] == '"':
-                string_start = self.position
-                self.position += 1
-                self.position_in_line += 1
-                # look for quotes to end string, but not if they are
-                # preceded by a \
-                while self.code[self.position] != '"':
-                    if self.code[self.position] == '\\':
-                        self.position += 2
-                        self.position_in_line += 2
-                    else:
-                        self.position += 1
-                        self.position_in_line += 1
-                self.position += 1
-                self.position_in_line += 1
-                self.current_token = self.code[string_start : self.position]
-                return self.current_token
-
-            # handle identifiers
-            if self.code[self.position] in (string.ascii_letters + '_' + '$'):
-                token_start = self.position
-                self.position += 1
-                self.position_in_line += 1
-                while self.code[self.position] in (
-                    string.ascii_letters + string.digits + '_'
-                ):
+                # handle whitespace
+                while self.code[self.position] in string.whitespace:
                     self.position += 1
                     self.position_in_line += 1
-                self.current_token = self.code[token_start : self.position]
+
+                # handle comments or division, hmm, these should probably
+                # be separate though?
+                if self.code[self.position] == "/":
+                    self.position += 1
+                    self.position_in_line += 1
+                    if self.code[self.position] == "/":
+                        while self.code[self.position] != "\n":
+                            self.position += 1
+                            self.position_in_line += 1
+                    else:
+                        self.current_token = self.code[self.position - 1]
+                        return self.current_token
+
+                # handle punctuation
+                if self.code[self.position] in ';(),`':
+                    self.position += 1
+                    self.position_in_line += 1
+                    self.current_token = self.code[self.position - 1]
+                    return self.current_token
+
+                # handle string constants
+                if self.code[self.position] == '"':
+                    string_start = self.position
+                    self.position += 1
+                    self.position_in_line += 1
+                    # look for quotes to end string, but not if they are
+                    # preceded by a \
+                    while self.code[self.position] != '"':
+                        if self.code[self.position] == '\\':
+                            self.position += 2
+                            self.position_in_line += 2
+                        else:
+                            self.position += 1
+                            self.position_in_line += 1
+                    self.position += 1
+                    self.position_in_line += 1
+                    self.current_token = self.code[string_start : self.position]
+                    return self.current_token
+
+                # handle numbers
+                if self.code[self.position] in string.digits:
+                    token_start = self.position
+                    self.position += 1
+                    self.position_in_line += 1
+                    while self.code[self.position] in string.digits:
+                        self.position += 1
+                        self.position_in_line += 1
+                    self.current_token = self.code[token_start : self.position]
+                    return self.current_token
+
+                # handle identifiers
+                if self.code[self.position] in (string.ascii_letters + '_' + '$'):
+                    token_start = self.position
+                    self.position += 1
+                    self.position_in_line += 1
+                    while self.code[self.position] in (
+                        string.ascii_letters + string.digits + '_'
+                    ):
+                        self.position += 1
+                        self.position_in_line += 1
+                    self.current_token = self.code[token_start : self.position]
+                    return self.current_token
+            # If any of the above position += 1 take us past the end of code,
+            # this will save us.  Some would argue this is an improper use of
+            # exceptions.
+            except IndexError as err:
+                self.current_token = ''
                 return self.current_token
-        # If any of the above position += 1 take us past the end of code,
-        # this will save us.  Some would argue this is an improper use of
-        # exceptions.
-        except IndexError as err:
-            self.current_token = ''
-            return self.current_token
 
 
 class CodeGen:
