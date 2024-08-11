@@ -1,6 +1,18 @@
 #!/bin/bash
 set -e
 
+compare () {
+    reference_out=$1
+    vpiler_out=$2
+    if [ "$reference_out" = "$vpiler_out" ]; then
+        echo "$vpiler_out"
+        echo "reference and vpiler match"
+    else
+        echo "MISMATCH: reference out: $reference_out, vpiler out: $vpiler_out"
+        exit 1
+    fi
+}
+
 echo "compiling and running hello_world.sv with icarus verilog"
 iverilog -o hello_world hello_world.sv
 icarus_out=$(./hello_world)
@@ -10,13 +22,19 @@ echo "compiling and running hello_world.sv with vpiler"
 ./main.py "$@" hello_world.sv
 vpiler_out=$(./a.out)
 
-if [ "$icarus_out" = "$vpiler_out" ]; then
-    echo "$vpiler_out"
-    echo "icarus and vpiler match"
-else
-    echo "MISMATCH: icarus out: $icarus_out, vpiler out: $vpiler_out"
-    exit 1
-fi
+compare "$icarus_out" "$vpiler_out"
+
+echo
+echo "compiling and running counter.sv with icarus verilog"
+iverilog -g2005-sv -o counter counter.sv
+icarus_out=$(./counter)
+
+echo
+echo "compiling and running counter.sv with vpiler"
+./main.py "$@" counter.sv
+vpiler_out=$(./a.out)
+
+compare "$icarus_out" "$vpiler_out"
 
 echo 
 echo "compiling and running hello_world.vhdl with ghdl"
@@ -29,12 +47,4 @@ echo
 echo "compiling and running hello_world.vhdl with vpiler"
 echo "not done yet"
 
-echo
-echo "compiling and running counter.sv with icarus verilog"
-iverilog -g2005-sv -o counter counter.sv
-./counter
-
-echo
-echo "compiling and running counter.sv with vpiler"
-./main.py "$@" counter.sv
-./a.out
+compare "$ghdl_out" "$vpiler_out"
