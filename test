@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+VERILOG_CMD="iverilog -g2005-sv"
+
 compare () {
     reference_out=$1
     vpiler_out=$2
@@ -14,7 +16,7 @@ compare () {
 }
 
 echo "compiling and running hello_world.sv with icarus verilog"
-iverilog -o hello_world hello_world.sv
+$VERILOG_CMD -o hello_world hello_world.sv
 icarus_out=$(./hello_world)
 
 echo
@@ -26,7 +28,7 @@ compare "$icarus_out" "$vpiler_out"
 
 echo
 echo "compiling and running counter.sv with icarus verilog"
-iverilog -g2005-sv -o counter counter.sv
+$VERILOG_CMD -o counter counter.sv
 icarus_out=$(./counter)
 
 echo

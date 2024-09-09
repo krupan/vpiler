@@ -1,3 +1,5 @@
+timeunit 1us/100ns;
+
 // this is a comment
 module top;
   // this is another comment

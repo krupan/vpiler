@@ -1,4 +1,4 @@
-`timescale 1ns/1ns
+timeunit 1ns/1ns;
 
 module counter (
   input clk, reset,
@@ -25,9 +25,9 @@ module counter_tb;
 
   task run_clock;
     for(int i = 0; i < 10; i++) begin
-      clk <= 0;
+      clk = 0;
       #(CLOCK_PERIOD / 2ns);
-      clk <= 1;
+      clk = 1;
       #(CLOCK_PERIOD / 2ns);
     end
   endtask
@@ -39,9 +39,9 @@ module counter_tb;
         localparam EXPECTED_COUNT = 5;
 
         // hold reset high for a few clocks
-        reset <= 1;
+        reset = 1;
         #(CLOCK_PERIOD * 3ns);
-        reset <= 0;
+        reset = 0;
 
         // do some counting
         #(CLOCK_PERIOD * EXPECTED_COUNT);

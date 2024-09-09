@@ -118,6 +118,7 @@ class CodeGen:
     def __init__(self, filename):
         self.header = ''
         self.body = ''
+        # indentation level
         self.il = 0
         self.filename = filename
 
@@ -203,8 +204,22 @@ class Parser:
         logging.debug('parsed source_text')
 
     def description(self, token):
+        if token == "timeunit" or token == "timeprecision":
+            self.timeunits_declaration(token)
+            token = self.next_token()
         self.module_declaration(token)
         logging.debug('parsed description')
+
+    def timeunits_declaration(self, token):
+        if token == "timeunit":
+            self.cg.writeh("#define timeunit ")
+            self.time_literal(self.next_token())
+        token = self.next_token()
+        if token == "/":
+            self.cg.writeh("#define timeprecision ")
+            self.time_literal(self.next_token())
+        if self.next_token() != ';':
+            self.error("expected ';' after timeunit declaration")
 
     def module_declaration(self, token):
         self.module_ansi_header(token)
@@ -350,8 +365,7 @@ class Parser:
     def string_literal(self, token):
         if token[0] != '"':
             self.error(
-                "expected string literal because string literals are the only "
-                "literals supported right now"
+                "expected string literal"
             )
             return
         if self.str_needs_newline:
@@ -361,6 +375,19 @@ class Parser:
         self.cg.writeb(token)
         logging.debug('parsed string_literal')
 
+    def time_literal(self, token):
+        if not token.isdigit():
+            self.error("expected literal unsigned number")
+        self.cg.writeh(f"({token} ")
+        self.time_unit(self.next_token())
+        logging.debug("parsed time_literal")
+
+    def time_unit(self, token):
+        # keep everything in terms of the smallest unit
+        units = {'s': '* 1o^15', 'ms': '* 10^12', 'us': '* 10^9', 'ns': '* 10^6', 'ps': '* 10^3', 'fs': '* 10^0'}
+        if token not in units:
+            self.error("expected literal time unit of s, ms, us, ns, ps, or fs")
+        self.cg.writeh(f"{units[token]})\n")
 
 def main(args):
     log_level = logging.INFO

@@ -8,7 +8,11 @@
 ; — Square brackets ( [ ] ) enclose optional items.
 ; — Braces ( { } ) enclose items that can be repeated zero or more times
 
-<source_text> ::= { <description> }
+<source_text> ::= [ <timeunits_declaration> ] { <description> }
+<timeunits_declaration> ::= timeunit <time_literal> [ / <time_literal> ] ;
+                        | timeprecision <time_literal> ;
+                        | timeunit <time_literal> ; timeprecision <time_literal> ;
+                        | timeprecision <time_literal> ; timeunit <time_literal> ;
 <description> ::= <module_declaration>
 <module_declaration> ::= <module_ansi_header> { <non_port_module_item> } endmodule
 <module_ansi_header> ::= module <module_identifier> \;
@@ -33,5 +37,10 @@
 <list_of_arguments> ::= [ <expression> ] { , [ <expression> ] }
 <expression> ::= <primary>
 <primary> ::= <primary_literal>
+<time_literal> ::= <unsigned_number><time_unit> | <fixed_point_number><time_unit>
+<time_unit> ::= s | ms | us | ns | ps | fs
 <primary_literal> ::= <string_literal>
 <string_literal> ::= " { Any_ASCII_Characters } "
+<fixed_point_number> ::= <unsigned_number> . <unsigned_number>
+<unsigned_number> ::= <decimal_digit> { _ | <decimal_digit> }
+<decimal_digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
